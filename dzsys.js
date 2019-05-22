@@ -1,3 +1,4 @@
+'use strict';
 function showTime(){
     var date = new Date();
     var h = date.getHours(); // 0 - 23
@@ -9,6 +10,6 @@ function showTime(){
     s = (s < 10) ? "0" + s : s;
     
     var time = h + ":" + m + ":" + s;
-    document.getElementById("ClockDisplay").innerText = time;
+    document.querySelector('#ClockDisplay').innerText = time;
     setTimeout(showTime, 1000);
 }
