@@ -1,5 +1,5 @@
 'use strict';
-window.addEventListener('load', () => {				// change paths line 85 106 for production
+window.addEventListener('load', () => {				// change paths line 111 158 for production
 
 	const selectSystem = document.querySelector('#dzsystem-id');
 	const jumpSystem = document.querySelector('#main');
@@ -12,7 +12,6 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 	// const taxPaidTill passed with html in diverload.ctp
 	const nameInput = document.querySelector('#divername');
 	const couponCode = document.querySelector('#couponnr');
-	// let nameInputListener = whenSelected;
 	
 	let jump = jumpSelected.value;
 	let priceLevel = 0;
@@ -75,26 +74,12 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 		arrayAfterFetch.forEach(listItem => {
 			const option = document.createElement('option');
 			option.value = listItem.id;
-			option.textContent = listItem.value;
+			option.textContent = listItem.name;
 			dataListElement.appendChild(option);
 		});
 		return dataListElement;
 	}
 
-	function whenSelected(e) {                             // update input field and call other function after input option selected
-		  if (e.inputType === 'insertReplacementText') {
-		    const selectedOne = this.fetchedArray.find(option => option.id == e.target.value);
-			  if (typeof selectedOne !== 'undefined') {
-				  e.target.value = selectedOne.value;
-					this.optionList.innerHTML = '';
-					const eventAfterOptionInput = new CustomEvent('afterOptionInput', {
-						detail: {payload: selectedOne}							// check what's in the payload for function in furtherActions
-					});
-					e.target.dispatchEvent(eventAfterOptionInput);         // do something after option input
-				}
-			}
-	}
-	
 	function fetchAndUpdate(autocompleteParams) {
 		const request = prepareJsonRequest(autocompleteParams);
 		fetchJsonData(request)
@@ -106,8 +91,7 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 				};
 				const flag = autocompleteParams.inputElement.dataset.inputEventFlag;
 				if (!flag) {
-					autocompleteParams.inputElement.addEventListener('afterOptionInput', autocompleteParams.furtherActions );
-					autocompleteParams.inputElement.addEventListener('input', whenSelected.bind(forSelection));
+					autocompleteParams.inputElement.addEventListener('input', autocompleteParams.furtherActions.bind(forSelection));
 					if (flag === undefined) {
 						autocompleteParams.inputElement.dataset.inputEventFlag = false;
 					}
@@ -118,7 +102,7 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 
   // Section Check Coupon START**********************************************************START
   function checkIfCouponValid(e) {
-		if ((this.textLength < 2) || (this.textLength > 7) ||
+		if ((this.value.length < 2) || (this.value.length > 5) ||
 		(e.key === 'ArrowDown') || (e.key === 'ArrowUp')) {
 		  return;																							// do not process the input here, leave it for the DOM to process
 		}
@@ -135,14 +119,22 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 	}
 
 	function couponPaidCheck(e) {
+		const selectedOne = this.fetchedArray.find(option => option.id == e.target.value);
+		const validTill = selectedOne.expires.split('T')[0];
+		this.optionList.innerHTML = '';
+		if (typeof selectedOne !== 'undefined') e.target.value = selectedOne.name+' Galioja iki: '+validTill;
 		let paidText;
-		if (e.detail.payload.paid === true) {
+		
+		if (selectedOne.paid === true) {
 			paidText = '<b>Apmokėtas</b>';
-			this.style = 'background-color: lightgreen';
+			new Date(validTill) >= Date.now() ?
+				e.target.style = 'background-color: lightgreen' :
+				e.target.style = 'background-color: salmon';
 		} else {
 			paidText = '<b>NEapmokėtas</b>';
-			this.style = 'background-color: red';
+			e.target.style = 'background-color: red';
 		}
+		
 		let couponPaidElement = document.querySelector('#iscouponpaid');
 		if (couponPaidElement) {
 			couponPaidElement.innerHTML = 'Čekis ' + paidText;
@@ -157,7 +149,6 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 
 // Section Input Diver Data START*******************************************************************START
   function fillDiverInfo(e) {
-		// console.log(this.value.length);
     if ((this.value.length < 3) || (this.value.length > 7) ||
         (e.key === 'ArrowDown') || (e.key === 'ArrowUp')) {
 				return;																							// do not process the input event
@@ -175,11 +166,15 @@ window.addEventListener('load', () => {				// change paths line 85 106 for produ
 	}
 
 	function diverDataUpdate(e) {
-		diverId.value = e.detail.payload.id;
-		jumpSystem.value = e.detail.payload.main;
-		jumpAmount.value = e.detail.payload.jumps;
+		const selectedOne = this.fetchedArray.find(option => option.id == e.target.value);
+		this.optionList.innerHTML = '';
+
+		if (typeof selectedOne !== 'undefined') e.target.value = selectedOne.name;
+		diverId.value = selectedOne.id;
+		jumpSystem.value = selectedOne.main;
+		jumpAmount.value = selectedOne.jumps;
 				const eventGotTaxData = new CustomEvent('gottax', {
-				  detail: {text: e.detail.payload.imok}
+				  detail: {text: selectedOne.imok}
 				});
 				jumpPrice.dispatchEvent(eventGotTaxData);         // update jump price after diver selected
 	}
